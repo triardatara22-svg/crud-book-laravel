@@ -8,10 +8,22 @@ use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $books = Book::with('category')->get();
-        return view('books.index', compact('books'));
+        $books = Book::with('category');
+
+        if ($request->search) {
+            $books->where('judul', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->category) {
+            $books->where('category_id', $request->category);
+        }
+
+        $books = $books->get();
+        $categories = Category::with('books')->get();
+
+        return view('books.index', compact('books', 'categories'));
     }
 
     public function create()
@@ -22,47 +34,25 @@ class BookController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'category_id' => 'required',
-            'judul' => 'required',
-            'penulis' => 'required',
-            'tahun_terbit' => 'required|numeric',
-            'stok' => 'required|numeric',
-        ]);
-
         Book::create($request->all());
-
-        return redirect()->route('books.index')
-            ->with('success', 'Data book berhasil ditambahkan');
+        return redirect()->route('books.index');
     }
 
     public function edit(Book $book)
     {
         $categories = Category::all();
-        return view('books.edit', compact('book', 'categories'));
+        return view('books.edit', compact('book','categories'));
     }
 
     public function update(Request $request, Book $book)
     {
-        $request->validate([
-            'category_id' => 'required',
-            'judul' => 'required',
-            'penulis' => 'required',
-            'tahun_terbit' => 'required|numeric',
-            'stok' => 'required|numeric',
-        ]);
-
         $book->update($request->all());
-
-        return redirect()->route('books.index')
-            ->with('success', 'Data book berhasil diupdate');
+        return redirect()->route('books.index');
     }
 
     public function destroy(Book $book)
     {
         $book->delete();
-
-        return redirect()->route('books.index')
-            ->with('success', 'Data book berhasil dihapus');
+        return redirect()->route('books.index');
     }
 }
